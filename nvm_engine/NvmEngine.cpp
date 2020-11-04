@@ -124,12 +124,12 @@ Status HashMap::recovery(char* _base) {
   return Ok;
 }
 
-void HashMap::summary() {
-  struct rusage usage;
+void HashMap::summary() const {
+  struct rusage usage {};
   getrusage(RUSAGE_SELF, &usage);
   fprintf(NvmEngine::LOG,
           "set %d(%d) timestamp:%ld find times:%d rss:%ld cur block: %u\n", wt,
-          tid, time(NULL), find_times, usage.ru_maxrss,
+          tid, time(nullptr), find_times, usage.ru_maxrss,
           this->kvStore->getValueIndex());
   fflush(NvmEngine::LOG);
 }
@@ -156,28 +156,9 @@ NvmEngine::NvmEngine(const std::string& _name, FILE* _log_file) {
 NvmEngine::~NvmEngine() { delete this->hashMap; }
 
 Status NvmEngine::Get(const Slice& key, std::string* value) {
-  /*++rt;
-  if (rt == 15000000) {
-    hashMap->summary();
-    exit(0);
-  }*/
   return hashMap->get(key, value);
 }
 
 Status NvmEngine::Set(const Slice& key, const Slice& value) {
-  /* ++wt;
-
-   if (wt == 25165823) {
-     hashMap->summary();
-     *//*fprintf(NvmEngine::LOG, "%s",
-            this->hashMap->kvStore->freeList->getStatus().c_str());
-    fflush(NvmEngine::LOG);*//*
-    exit(0);
-  }
-
-  if (wt % 5000000 == 0) {
-    this->hashMap->summary();
-  }*/
-
   return hashMap->set(key, value);
 }

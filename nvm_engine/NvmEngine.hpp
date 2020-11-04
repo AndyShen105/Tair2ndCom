@@ -23,7 +23,6 @@ typedef uint32_t HASH_VALUE;
 typedef uint16_t VALUE_LEN_TYPE;
 typedef uint32_t KEY_INDEX_TYPE;
 typedef uint32_t BLOCK_INDEX_TYPE;
-typedef long long LL;
 
 static const uint8_t KEY_LEN = 16;
 static const uint8_t KEY_STORE_VALUE_LINK_OFFSET =
@@ -44,7 +43,6 @@ static const uint32_t VALUE_PART_FIX_NUM =
 
 thread_local int tid = -1;
 atomic<int32_t> curTid = {0};
-thread_local char valueBuff[VALUE_MAX_LEN];
 thread_local char keyBuff[KEY_STORE_LEN];
 
 static const uint32_t KEY_PART_FIX_NUM = KV_NUM_MAX * 0.90 / THREAD_NUM;
@@ -122,9 +120,7 @@ class FreeList {
   }
 
   // recover free list from pmem
-  void recovery(char* memBase){
-
-  };
+  void recovery(char* memBase){};
   // push one free block
   void push(int _size, BLOCK_INDEX_TYPE _index) {
     if (_size < 3) return;
@@ -238,16 +234,7 @@ class KeyPool {
     }
     return UINT32_MAX;
   }
-  VALUE_LEN_TYPE getValLen(KEY_INDEX_TYPE _index) {
-    return *(VALUE_LEN_TYPE*)(keyBuffer +
-                              static_cast<uint64_t>(_index) * KEY_STORE_LEN +
-                              KEY_LEN);
-  }
-  BLOCK_INDEX_TYPE getValIndex(KEY_INDEX_TYPE _index) {
-    return *(BLOCK_INDEX_TYPE*)(keyBuffer +
-                                static_cast<uint64_t>(_index) * KEY_STORE_LEN +
-                                KEY_STORE_VALUE_LINK_OFFSET);
-  }
+
   char* next(KEY_INDEX_TYPE& _index) {
     char* key = keyBuffer + static_cast<uint64_t>(_index) * KEY_STORE_LEN;
     _index = pointer[_index];
@@ -269,7 +256,7 @@ class KeyPool {
     pointer[index] = _keyIndex;
     return index;
   }
-  void recoveryKeyBuffer() {
+  void recoveryKeyBuffer() const {
     VALUE_LEN_TYPE len = *(BLOCK_INDEX_TYPE*)(keyBase + KEY_LEN);
     if (len == 0) {
       return;
@@ -345,7 +332,7 @@ class KVStore {
   }
 
   // erase value according to its head index
-  void erase(VALUE_LEN_TYPE _dataLen, BLOCK_INDEX_TYPE _index) {
+  void erase(VALUE_LEN_TYPE _dataLen, BLOCK_INDEX_TYPE _index) const {
     int size = (_dataLen + VALUE_BLOCK_LEN - 1) / VALUE_BLOCK_LEN;
     this->freeList->push(size, _index);
   }
@@ -358,7 +345,7 @@ class KVStore {
   FreeList* freeList;
 
  private:
-  atomic<BLOCK_INDEX_TYPE> curValueIndex;
+  atomic<BLOCK_INDEX_TYPE> curValueIndex{};
   char* valueBase = nullptr;
 };
 
@@ -367,7 +354,7 @@ typedef uint32_t (*hash_func)(const char*);
 class NvmEngine;
 class HashMap {
  public:
-  HashMap(char* _base, hash_func _hash = DJBHash);
+  explicit HashMap(char* _base, hash_func _hash = DJBHash);
 
   ~HashMap();
 
@@ -377,7 +364,7 @@ class HashMap {
 
   Status recovery(char* _base);
 
-  void summary();
+  void summary() const;
 
   KVStore* kvStore;
 
